@@ -214,7 +214,7 @@ public class IbcTws {
         }
         checkArguments(args);
         setupDefaultEnvironment(args, false);
-        load();
+        load(false);
     }
 
     static void setupDefaultEnvironment(final String[] args, final boolean isGateway) throws Exception {
@@ -261,7 +261,7 @@ public class IbcTws {
         }
     }
 
-    public static void load() {
+    public static void load(boolean isJavaAgent) {
         try {
             printVersionInfo();
 
@@ -283,7 +283,7 @@ public class IbcTws {
 
             startSavingTwsSettingsAutomatically();
 
-            startTwsOrGateway(isGateway);
+            startTwsOrGateway(isGateway, isJavaAgent);
         } catch (IllegalStateException e) {
             if (e.getMessage().equalsIgnoreCase("Shutdown in progress")) {
                 // an exception with this message can occur if a STOP command is
@@ -429,12 +429,14 @@ public class IbcTws {
         Utils.logRawToConsole("------------------------------------------------------------");
     }
 
-    private static void startGateway() {
+    private static void startGateway(boolean isJavaAgent) {
         String[] twsArgs = new String[1];
         twsArgs[0] = getTWSSettingsDirectory();
         try {
             LoginManager.loginManager().startSession();
-            ibgateway.GWClient.main(twsArgs);
+            if (!isJavaAgent) {
+                ibgateway.GWClient.main(twsArgs);
+            }
         } catch (Throwable t) {
             Utils.logError("Can't find the Gateway entry point: ibgateway.GWClient.main. Gateway is not correctly installed.");
             t.printStackTrace(Utils.getErrStream());
@@ -459,7 +461,7 @@ public class IbcTws {
         }
     }
 
-    private static void startTws() {
+    private static void startTws(boolean isJavaAgent) {
         if (Settings.settings().getBoolean("ShowAllTrades", false)) {
             Utils.showTradesLogWindow();
         }
@@ -467,7 +469,9 @@ public class IbcTws {
         twsArgs[0] = getTWSSettingsDirectory();
         try {
             LoginManager.loginManager().startSession();
-            jclient.LoginFrame.main(twsArgs);
+            if (!isJavaAgent) {
+                jclient.LoginFrame.main(twsArgs);
+            }
         } catch (Throwable t) {
             Utils.logError("Can't find the TWS entry point: jclient.LoginFrame.main; TWS is not correctly installed.");
             t.printStackTrace(Utils.getErrStream());
@@ -475,13 +479,13 @@ public class IbcTws {
         }
     }
 
-    private static void startTwsOrGateway(boolean isGateway) {
+    private static void startTwsOrGateway(boolean isGateway, boolean isJavaAgent) {
         Utils.logToConsole("TWS Settings directory is: " + getTWSSettingsDirectory());
         JtsIniManager.initialise(getJtsIniFilePath());
         if (isGateway) {
-            startGateway();
+            startGateway(isJavaAgent);
         } else {
-            startTws();
+            startTws(isJavaAgent);
         }
 
         int portNumber = Settings.settings().getInt("OverrideTwsApiPort", 0);

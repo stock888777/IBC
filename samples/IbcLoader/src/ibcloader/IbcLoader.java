@@ -28,7 +28,7 @@ public class IbcLoader {
     public static void main(String[] args) {
         try {
             setupEnvironment(true);
-            ibcalpha.ibc.IbcTws.load();
+            ibcalpha.ibc.IbcTws.load(false);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

@@ -20,19 +20,27 @@ package ibcalpha.ibc;
 
 import static ibcalpha.ibc.IbcTws.checkArguments;
 import static ibcalpha.ibc.IbcTws.setupDefaultEnvironment;
+import static ibcalpha.ibc.Utils.shellSplit;
 
-public class IbcGateway {
-    public static void main(String[] args) throws Exception {
+public class JavaAgent {
+    public static void premain(String agentArgs) throws Exception {
         if (Thread.getDefaultUncaughtExceptionHandler() == null) {
             Thread.setDefaultUncaughtExceptionHandler(new ibcalpha.ibc.UncaughtExceptionHandler());
         }
+        String[] args = shellSplit(agentArgs == null || agentArgs.equals("") ? "NULL" : agentArgs).toArray(new String[0]);
         checkArguments(args);
-        setupDefaultEnvironment(args, true);
-        IbcTws.load(false);
+        setupDefaultEnvironment(args, isGateway());
+        IbcTws.load(true);
     }
 
-    public static void printVersionInfo() {
-        IbcTws.printVersionInfo();
+    private static boolean isGateway() {
+        String command = System.getProperty("sun.java.command", "").toLowerCase();
+        if (command.startsWith("install4j.ibgateway") || command.contains("ibgateway.exe")) {
+            return true;
+        } else if (command.startsWith("install4j.jclient") || command.contains("tws.exe")) {
+            return false;
+        } else {
+            throw new RuntimeException("Cannot determine whether TWS or Gateway: sun.java.command = " + command);
+        }
     }
-
 }
